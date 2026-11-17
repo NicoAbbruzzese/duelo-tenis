@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a1a33">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="Duelo Tenis: tenis arcade 1 contra 1 online. Juega desde el celular o la PC contra un amigo.">
+<title>Duelo Tenis</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<!-- ======= Interfaz durante el partido ======= -->
+<div id="hud" class="hidden">
+  <div id="board">
+    <div class="row" id="row0"><span class="dot"></span><span class="nm"></span><span class="sets"></span><span class="gm"></span><span class="pt"></span></div>
+    <div class="row" id="row1"><span class="dot"></span><span class="nm"></span><span class="sets"></span><span class="gm"></span><span class="pt"></span></div>
+  </div>
+  <div id="topright">
+    <span id="ping"></span>
+    <div id="btnPause" role="button" aria-label="Pausa"><i></i><i></i></div>
+  </div>
+  <div id="banner"><div id="bannerMain"></div><div id="bannerSub"></div></div>
+  <div id="speed"></div>
+  <div id="serveUI" class="hidden">
+    <div id="gauge"><div id="gOk"></div><div id="gBest"></div><div id="gMark"></div></div>
+    <div id="hint"></div>
+  </div>
+  <div id="netwarn" class="hidden"></div>
+  <div id="keys" class="hidden"></div>
+  <div id="touch" class="hidden">
+    <div id="padZone">
+      <div id="dpad" data-dir="">
+        <div class="arm au"></div><div class="arm ad"></div><div class="arm al"></div><div class="arm ar"></div><div class="hub"></div>
+      </div>
+    </div>
+    <div id="btns">
+      <div class="tb b2" data-b="2"><b>GLOBO</b></div>
+      <div class="tb b3" data-b="3"><b>DEJADA</b></div>
+      <div class="tb b1" data-b="1"><b>CORTADO</b></div>
+      <div class="tb b0" data-b="0"><b>GOLPE</b></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= Pantallas ======= -->
+<div id="screens">
+  <section id="scrMenu" class="screen">
+    <div class="panel">
+      <h1 class="logo"><span class="ballico"></span>DUELO <em>TENIS</em></h1>
+      <p class="tag">1 contra 1 online · celular o PC</p>
+      <label class="field"><span>Tu nombre</span><input id="inName" maxlength="12" autocomplete="off" spellcheck="false" placeholder="Jugador"></label>
+      <div class="btnrow">
+        <button id="btnCreate" class="btn primary">Crear sala</button>
+        <button id="btnJoin" class="btn">Unirse a una sala</button>
+      </div>
+      <button id="btnHelp" class="link">Cómo se juega</button>
+    </div>
+  </section>
+
+  <section id="scrHost" class="screen hidden">
+    <div class="panel">
+      <h2>Tu sala</h2>
+      <div id="codeBig" class="code">····</div>
+      <p class="small">Pásale este enlace a tu rival (o que escriba el código):</p>
+      <div class="linkbox"><span id="shareUrl"></span></div>
+      <div class="btnrow">
+        <button id="btnShare" class="btn primary">Compartir enlace</button>
+        <button id="btnCopy" class="btn">Copiar</button>
+      </div>
+      <p id="hostStatus" class="status">Creando sala…</p>
+      <button id="btnHostCancel" class="link">Cancelar</button>
+    </div>
+  </section>
+
+  <section id="scrJoin" class="screen hidden">
+    <div class="panel">
+      <h2>Unirse a una sala</h2>
+      <label class="field"><span>Código de la sala</span><input id="inCode" class="codein" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD"></label>
+      <div class="btnrow"><button id="btnJoinGo" class="btn primary">Entrar</button></div>
+      <p id="joinStatus" class="status"></p>
+      <button id="btnJoinCancel" class="link">Volver</button>
+    </div>
+  </section>
+
+  <section id="scrLobby" class="screen hidden">
+    <div class="panel wide">
+      <div class="versus"><span id="lbName0" class="p0"></span><i>VS</i><span id="lbName1" class="p1"></span></div>
+      <p id="lbConn" class="status ok"></p>
+      <div id="lbOpts">
+        <div class="opt"><span>Duración</span><div class="seg" id="segLen">
+          <button data-v="0">Corto<small>1 set a 3 juegos</small></button>
+          <button data-v="1">Normal<small>1 set a 6 juegos</small></button>
+          <button data-v="2">Largo<small>mejor de 3 sets</small></button>
+        </div></div>
+        <div class="opt"><span>Cancha</span><div class="seg" id="segCourt">
+          <button data-v="0">Dura</button><button data-v="1">Polvo de ladrillo</button><button data-v="2">Césped</button>
+        </div></div>
+      </div>
+      <div class="btnrow"><button id="btnStart" class="btn primary big">¡Jugar!</button></div>
+      <p id="lbWait" class="status hidden"></p>
+      <button id="btnLobbyExit" class="link">Salir</button>
+    </div>
+  </section>
+
+  <section id="scrPause" class="screen hidden">
+    <div class="panel">
+      <h2 id="pauseTitle">Pausa</h2>
+      <div class="btncol">
+        <button id="btnResume" class="btn primary">Continuar</button>
+        <button id="btnSound" class="btn">Sonido: sí</button>
+        <button id="btnFull" class="btn">Pantalla completa</button>
+        <button id="btnHelp2" class="btn">Cómo se juega</button>
+        <button id="btnQuit" class="btn danger">Abandonar partido</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="scrResult" class="screen hidden">
+    <div class="panel">
+      <h2 id="resTitle"></h2>
+      <div id="resScore" class="resscore"></div>
+      <p id="resInfo" class="status"></p>
+      <div class="btnrow">
+        <button id="btnRematch" class="btn primary">Revancha</button>
+        <button id="btnResExit" class="btn">Salir</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="scrHelp" class="screen hidden">
+    <div class="panel wide help">
+      <h2>Cómo se juega</h2>
+      <div class="helpgrid">
+        <div>
+          <h3>En el celular</h3>
+          <p><b>Cruceta</b> (izquierda): mover al jugador. Mientras preparas un golpe, sirve para <b>apuntar</b>.</p>
+          <p><b>Botones</b> (derecha): <span class="k b0">GOLPE</span> liftado · <span class="k b1">CORTADO</span> bajo y lento · <span class="k b2">GLOBO</span> alto · <span class="k b3">DEJADA</span> cortita.</p>
+        </div>
+        <div>
+          <h3>En la PC</h3>
+          <p>Mover: <span class="k">W A S D</span> o <span class="k">flechas</span>.</p>
+          <p>Golpes: <span class="k b0">J</span> golpe · <span class="k b1">K</span> cortado · <span class="k b2">L</span> globo · <span class="k b3">I</span> dejada<br>(con flechas: <span class="k">Z X C V</span>). Pausa: <span class="k">Esc</span>. También sirve un mando.</p>
+        </div>
+      </div>
+      <ul class="tips">
+        <li><b>Colócate y pulsa pronto.</b> Corre hasta donde viene la pelota y pulsa el botón antes de que llegue: el jugador le pega solo cuando la pelota llega. Cuanto antes te prepares, más fuerte y preciso sale el golpe (el anillo bajo tus pies se llena).</li>
+        <li><b>Apunta con la cruceta</b> mientras preparas: izquierda/derecha para cruzar o ir paralelo, arriba para tirar profundo, abajo para tirar corto.</li>
+        <li><b>Saque:</b> pulsa un botón para lanzar la pelota y otra vez cuando la marca pase por el centro de la barra. Izquierda/derecha elige el lado.</li>
+        <li>Si la pelota te queda lejos, el jugador se estira y devuelve flojo. Sube a la red para volear y rematar los globos cortos.</li>
+      </ul>
+      <div class="btnrow"><button id="btnHelpBack" class="btn primary">Entendido</button></div>
+    </div>
+  </section>
+</div>
+
+<div id="rotate" class="hidden">
+  <div class="rotbox">
+    <div class="phoneico"></div>
+    <p>Se juega con el teléfono en horizontal</p>
+    <button id="btnRotate" class="btn primary">Pantalla completa</button>
+  </div>
+</div>
+<div id="toast" class="hidden"></div>
+
+<script src="vendor/peerjs.min.js"></script>
+<script type="module" src="js/main.js?v=1"></script>
+</body>
+</html>
