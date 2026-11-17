@@ -309,6 +309,8 @@ function leaveGame() {
   hud.reset();
   sfx.ambience(false);
   input.releaseTouch();
+  input.enabled = false; // fuera del partido el teclado vuelve a servir para los menús
+  clearTimeout(app.keysTimer);
 }
 
 // Entradas del invitado vistas por el anfitrión.
